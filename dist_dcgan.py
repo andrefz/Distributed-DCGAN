@@ -115,6 +115,9 @@ def weights_init(m):
         torch.nn.init.zeros_(m.bias)
 
 def main():
+    # Elapsed start time
+    elapsed_start_time = time.time()
+
     # Each process runs on 1 GPU device specified by the local_rank argument.
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--dataset', required=True, choices=['cifar10', 'lsun', 'mnist', \
@@ -185,6 +188,9 @@ def main():
     # Lets start all together. Optimizers all have barrier also
     torch.distributed.barrier()
 
+    # Tempo de inicialização
+    print("Rank,%d,Initialization Time: %f" % (rank, time.time() - elapsed_start_time))
+
     for epoch in range(argv.num_epochs):
         epoch_start_time = time.time()
         print(f"Rank: {rank}, Epoch: {epoch}, Training ...")
@@ -235,6 +241,9 @@ def main():
                   f"D(x): {D_x:.4f}, D(G(z)): {D_G_z1:.4f} / {D_G_z2:.4f}, " \
                   f"iteration time: {iteration_end_time:.4f}s")
 
+            # Tempo de cada iteração
+            print("Rank,%d,Epoch,%d,Iteration,%d,It. time,%f,Elapsed time,%f" % (rank, epoch, i, iteration_end_time, time.time() - elapsed_start_time))
+
             if i%100 == 0:
                 vutils.save_image(real_cpu, f'{argv.out_folder}/real_samples_rank_{rank}_epoch_{epoch}_iter_{i}.png', normalize=True)
                 fake = netG(fixed_noise)
@@ -244,7 +253,11 @@ def main():
         epoch_end_time = time.time()-epoch_start_time
         print(f"[rank: {rank}] Epoch {epoch} took: {epoch_end_time:.4f} seconds")
 
+        # Tempo de cada época
+        print("Rank,%d,Epoch,%d,Epoch time,%f,Elapsed time,%f" % (rank, epoch, epoch_end_time, time.time() - elapsed_start_time))
+
     torch.distributed.destroy_process_group()
 
 if __name__ == "__main__":
     main()
+
